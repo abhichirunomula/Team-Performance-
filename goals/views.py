@@ -1,9 +1,10 @@
 from django.shortcuts import redirect, render, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.paginator import Paginator
 
 from cycles.models import ReviewCycle
-from .forms import GoalForm
+from .forms import GoalForm, ManagerGoalForm, GoalStatusForm
 from .models import Goal
 
 
@@ -11,13 +12,11 @@ from .models import Goal
 def goal_list(request):
     """
     Employee: view own goals with filter/sort/pagination.
-    Manager: can see all their direct reports' goals via ?employee= param.
+    Manager: view all their direct reports' goals.
     """
     user = request.user
 
-    # --- Base queryset ---
     if user.role == 'MANAGER':
-        # Manager can optionally scope to a specific employee
         employee_pk = request.GET.get('employee')
         if employee_pk:
             qs = Goal.objects.filter(employee__pk=employee_pk, employee__manager=user)
@@ -28,65 +27,55 @@ def goal_list(request):
 
     qs = qs.select_related('review_cycle', 'employee')
 
-    # --- Filters ---
+    # Filters
     status_filter = request.GET.get('status', '')
     cycle_filter  = request.GET.get('cycle', '')
-
     if status_filter:
         qs = qs.filter(status=status_filter)
     if cycle_filter:
         qs = qs.filter(review_cycle__pk=cycle_filter)
 
-    # --- Sorting ---
+    # Sorting
     sort = request.GET.get('sort', '-created_at')
     allowed_sorts = {
-        'title': 'title',
-        '-title': '-title',
-        'status': 'status',
-        '-status': '-status',
-        'created_at': 'created_at',
-        '-created_at': '-created_at',
-        'cycle': 'review_cycle__title',
-        '-cycle': '-review_cycle__title',
+        'title': 'title', '-title': '-title',
+        'status': 'status', '-status': '-status',
+        'created_at': 'created_at', '-created_at': '-created_at',
+        'cycle': 'review_cycle__title', '-cycle': '-review_cycle__title',
     }
-    order_field = allowed_sorts.get(sort, '-created_at')
-    qs = qs.order_by(order_field)
+    qs = qs.order_by(allowed_sorts.get(sort, '-created_at'))
 
-    # --- Pagination ---
-    paginator = Paginator(qs, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    # Pagination
+    paginator  = Paginator(qs, 10)
+    page_obj   = paginator.get_page(request.GET.get('page', 1))
 
-    # For filter dropdowns
-    cycles = ReviewCycle.objects.order_by('-start_date')
-    if user.role == 'MANAGER':
-        direct_reports = user.team_members.all()
-    else:
-        direct_reports = []
+    cycles        = ReviewCycle.objects.order_by('-start_date')
+    direct_reports = user.team_members.all() if user.role == 'MANAGER' else []
 
-    context = {
+    return render(request, 'goals/goal_list.html', {
         'page_obj':       page_obj,
-        'goals':          page_obj.object_list,   # kept for template compat
         'cycles':         cycles,
         'direct_reports': direct_reports,
-        # active filter values (for sticky form)
         'status_filter':  status_filter,
         'cycle_filter':   cycle_filter,
         'sort':           sort,
         'status_choices': Goal.STATUS_CHOICES,
-    }
-
-    return render(request, 'goals/goal_list.html', context)
+    })
 
 
 @login_required
 def create_goal(request):
+    """Employee creates their own goal."""
+    if request.user.role == 'MANAGER':
+        return redirect('assign_task')
+
     if request.method == 'POST':
         form = GoalForm(request.POST)
         if form.is_valid():
             goal = form.save(commit=False)
             goal.employee = request.user
             goal.save()
+            messages.success(request, 'Goal created.')
             return redirect('goal_list')
     else:
         form = GoalForm()
@@ -95,29 +84,71 @@ def create_goal(request):
 
 
 @login_required
+def assign_task(request):
+    """Manager assigns a task/goal to one of their direct reports."""
+    if request.user.role != 'MANAGER':
+        messages.error(request, 'Only managers can assign tasks.')
+        return redirect('goal_list')
+
+    if request.method == 'POST':
+        form = ManagerGoalForm(request.POST, manager=request.user)
+        if form.is_valid():
+            goal = form.save(commit=False)
+            # Safety check: employee must belong to this manager
+            if goal.employee.manager != request.user:
+                messages.error(request, 'You can only assign tasks to your own team members.')
+                return redirect('goal_list')
+            goal.save()
+            messages.success(request, f'Task assigned to {goal.employee.username}.')
+            return redirect('goal_list')
+    else:
+        form = ManagerGoalForm(manager=request.user)
+
+    return render(request, 'goals/assign_task.html', {'form': form})
+
+
+@login_required
+def update_goal_status(request, pk):
+    """Employee updates only the status of their own goal."""
+    goal = get_object_or_404(Goal, pk=pk)
+
+    if goal.employee != request.user:
+        messages.error(request, 'You can only update your own goals.')
+        return redirect('goal_list')
+
+    if request.method == 'POST':
+        form = GoalStatusForm(request.POST, instance=goal)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Status updated to "{goal.get_status_display()}".')
+            return redirect('goal_list')
+    else:
+        form = GoalStatusForm(instance=goal)
+
+    return render(request, 'goals/update_status.html', {
+        'form':           form,
+        'goal':           goal,
+        'status_choices': Goal.STATUS_CHOICES,
+    })
+
+
+@login_required
 def edit_goal(request, pk):
     goal = get_object_or_404(Goal, pk=pk)
 
-    # Only the owning employee may edit
     if goal.employee != request.user:
-        from django.contrib import messages
         messages.error(request, 'You can only edit your own goals.')
         return redirect('goal_list')
 
-    # Guard: cycle must be OPEN
     if goal.review_cycle.status != 'OPEN':
-        from django.contrib import messages
-        messages.error(
-            request,
-            f'Goals cannot be edited once their cycle is '
-            f'"{goal.review_cycle.get_status_display()}".'
-        )
+        messages.error(request, f'Goals cannot be edited once their cycle is "{goal.review_cycle.get_status_display()}".')
         return redirect('goal_list')
 
     if request.method == 'POST':
         form = GoalForm(request.POST, instance=goal)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Goal updated.')
             return redirect('goal_list')
     else:
         form = GoalForm(instance=goal)
@@ -129,23 +160,16 @@ def edit_goal(request, pk):
 def delete_goal(request, pk):
     goal = get_object_or_404(Goal, pk=pk)
 
-    if goal.employee != request.user:
-        from django.contrib import messages
+    if goal.employee != request.user and request.user.role != 'MANAGER':
         messages.error(request, 'You can only delete your own goals.')
         return redirect('goal_list')
 
     if goal.review_cycle.status != 'OPEN':
-        from django.contrib import messages
-        messages.error(
-            request,
-            f'Goals cannot be deleted once their cycle is '
-            f'"{goal.review_cycle.get_status_display()}".'
-        )
+        messages.error(request, f'Goals cannot be deleted once their cycle is "{goal.review_cycle.get_status_display()}".')
         return redirect('goal_list')
 
     if request.method == 'POST':
         goal.delete()
-        from django.contrib import messages
         messages.success(request, 'Goal deleted.')
         return redirect('goal_list')
 

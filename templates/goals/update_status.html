@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Update Status — Team Performance{% endblock %}
+{% block nav_goals %}active{% endblock %}
+
+{% block content %}
+<style>
+    .status-option-grid { display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.75rem; }
+    .status-radio { display:none; }
+    .status-card {
+        flex:1; min-width:140px; padding:1.25rem 1rem; border-radius:10px;
+        border:2px solid var(--border); background:var(--surface2); cursor:pointer;
+        text-align:center; transition:all 0.15s; font-size:0.9rem; font-weight:500;
+        color:var(--muted);
+    }
+    .status-card:hover { border-color:var(--accent); color:var(--text); }
+    .status-radio:checked + .status-card {
+        border-color:var(--accent);
+        background:rgba(124,106,247,.15);
+        color:var(--accent2);
+    }
+    .status-card .s-icon { font-size:1.75rem; display:block; margin-bottom:0.5rem; }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Update <span>Status</span></h1>
+    <a href="{% url 'goal_list' %}" class="btn btn-ghost">← Goals</a>
+</div>
+
+<div class="card" style="max-width:520px;">
+    <p class="section-label">Task</p>
+    <p style="font-size:1rem;font-weight:600;margin-bottom:0.4rem;">{{ goal.title }}</p>
+    {% if goal.description %}
+    <p class="muted" style="font-size:0.875rem;margin-bottom:1rem;">{{ goal.description }}</p>
+    {% endif %}
+    <p class="muted" style="font-size:0.78rem;">Cycle: {{ goal.review_cycle.title }}</p>
+
+    <hr class="divider">
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <p class="section-label">Select New Status</p>
+        <div class="status-option-grid">
+            {% for val, label in status_choices %}
+            <label>
+                <input type="radio" name="status" value="{{ val }}" class="status-radio"
+                    {% if goal.status == val %}checked{% endif %}>
+                <div class="status-card">
+                    <span class="s-icon">
+                        {% if val == 'NOT_STARTED' %}⏳
+                        {% elif val == 'IN_PROGRESS' %}⚙️
+                        {% else %}✅
+                        {% endif %}
+                    </span>
+                    {{ label }}
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="actions-row" style="margin-top:2rem;">
+            <button type="submit" class="btn btn-primary btn-lg">Save Status</button>
+            <a href="{% url 'goal_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

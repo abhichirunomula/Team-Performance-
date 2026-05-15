@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Write Review — {{ employee.username }}{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Review: <span>{{ employee.username }}</span></h1>
+    <a href="{% url 'manager_review_list' %}" class="btn btn-ghost">← Review List</a>
+</div>
+<p class="muted" style="margin-bottom:1.5rem;font-size:0.9rem;">Cycle: <strong style="color:var(--text);">{{ cycle.title }}</strong></p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+    <!-- Employee Goals -->
+    <div class="card">
+        <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">🎯 Employee Goals</h3>
+        {% if employee_goals %}
+            {% for goal in employee_goals %}
+            <p class="section-label" style="margin-top:0.75rem;">{{ goal.title }} &nbsp;<span class="badge badge-{{ goal.status|lower }}">{{ goal.get_status_display }}</span></p>
+            {% if goal.description %}<p class="text-body" style="font-size:0.85rem;">{{ goal.description }}</p>{% endif %}
+            {% endfor %}
+        {% else %}
+            <p class="hidden-note">No goals set for this cycle.</p>
+        {% endif %}
+    </div>
+
+    <!-- Self-Assessment -->
+    <div class="card">
+        <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">📝 Self-Assessment</h3>
+        {% if self_assessment %}
+            <p class="text-body" style="font-size:0.88rem;">{{ self_assessment.text }}</p>
+        {% else %}
+            <p class="hidden-note">Employee has not submitted a self-assessment.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Form -->
+<div class="card" style="max-width:680px;">
+    <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:1.25rem;">Your Review</h3>
+    <div class="warning-box">⚠️ Submitting will <strong>finalize</strong> the review. This cannot be undone.</div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        {% if form.non_field_errors %}
+        <ul class="errorlist" style="margin-bottom:1rem;">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg">Finalize Review</button>
+            <a href="{% url 'manager_review_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

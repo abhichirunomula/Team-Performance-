@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — Team Performance{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🛡️ Admin <span>Panel</span></h1>
+    <a href="{% url 'admin_create_manager' %}" class="btn btn-primary">＋ Create Manager</a>
+</div>
+
+<!-- Stats row -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:2rem;">
+    <div class="stat-card purple">
+        <div class="stat-icon">🛡️</div>
+        <div class="stat-value">1</div>
+        <div class="stat-label">Admin</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon">👔</div>
+        <div class="stat-value">{{ managers.count }}</div>
+        <div class="stat-label">Managers</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">👤</div>
+        <div class="stat-value">{{ employees.count }}</div>
+        <div class="stat-label">Employees</div>
+    </div>
+</div>
+
+<!-- Hierarchy Info -->
+<div class="status-box status-info" style="margin-bottom:2rem;">
+    🔗 Hierarchy: <strong>Admin</strong> → <strong>Manager</strong> → <strong>Employee</strong>
+</div>
+
+<!-- Managers Table -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">👔 Managers</span>
+    </div>
+    <div class="table-wrap">
+        {% if managers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Team Size</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mgr in managers %}
+                <tr>
+                    <td><strong>{{ mgr.username }}</strong></td>
+                    <td class="muted">{{ mgr.get_full_name|default:"—" }}</td>
+                    <td class="muted">{{ mgr.email|default:"—" }}</td>
+                    <td>
+                        <span class="badge badge-{% if mgr.team_members.count > 0 %}yes{% else %}not_started{% endif %}">
+                            {{ mgr.team_members.count }} employee{{ mgr.team_members.count|pluralize }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem;">
+                            <a href="{% url 'admin_manager_detail' mgr.pk %}" class="btn btn-view btn-sm">View Team</a>
+                            <a href="{% url 'admin_delete_manager' mgr.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">👔</div>
+            <p>No managers yet. <a href="{% url 'admin_create_manager' %}" style="color:var(--accent2);">Create the first one.</a></p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Unassigned Employees -->
+{% if unassigned %}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">⚠️ Unassigned Employees</span>
+        <span class="badge badge-warn">{{ unassigned.count }} unassigned</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in unassigned %}
+                <tr>
+                    <td><strong>{{ emp.username }}</strong></td>
+                    <td class="muted">{{ emp.email|default:"—" }}</td>
+                    <td>
+                        <a href="{% url 'admin_assign_manager' emp.pk %}" class="btn btn-primary btn-sm">Assign Manager</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- All Employees Table -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">👤 All Employees</span>
+    </div>
+    <div class="table-wrap">
+        {% if employees %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Manager</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td><strong>{{ emp.username }}</strong></td>
+                    <td class="muted">{{ emp.get_full_name|default:"—" }}</td>
+                    <td class="muted">{{ emp.email|default:"—" }}</td>
+                    <td>
+                        {% if emp.manager %}
+                        <span class="badge badge-yes">{{ emp.manager.username }}</span>
+                        {% else %}
+                        <span class="badge badge-warn">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem;">
+                            <a href="{% url 'admin_assign_manager' emp.pk %}" class="btn btn-ghost btn-sm">Change Manager</a>
+                            <a href="{% url 'admin_delete_employee' emp.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">👤</div>
+            <p>No employees yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

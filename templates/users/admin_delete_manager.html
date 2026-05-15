@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Delete Manager — Admin Panel{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:4rem auto;text-align:center;">
+    <div class="card">
+        <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:0.75rem;">Delete Manager?</h2>
+        <p style="color:var(--accent2);font-size:1rem;font-weight:600;margin-bottom:1rem;">{{ manager.username }}</p>
+
+        {% if manager.team_members.count > 0 %}
+        <div class="warning-box" style="text-align:left;margin-bottom:1.5rem;">
+            ⚠️ This manager has <strong>{{ manager.team_members.count }} employee{{ manager.team_members.count|pluralize }}</strong>.
+            Deleting will <strong>unassign</strong> them — they will not be deleted.
+        </div>
+        <div class="table-wrap" style="margin-bottom:1.5rem;text-align:left;">
+            <table>
+                <thead><tr><th>Affected Employees</th></tr></thead>
+                <tbody>
+                    {% for emp in manager.team_members.all %}
+                    <tr><td>{{ emp.username }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem;">
+            This manager has no employees assigned.
+        </p>
+        {% endif %}
+
+        <div class="actions-row" style="justify-content:center;">
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg">Yes, Delete Manager</button>
+            </form>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

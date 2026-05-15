@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Self-Assessment — {{ cycle.title }}{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Self-<span>Assessment</span></h1>
+    <a href="{% url 'cycle_list' %}" class="btn btn-ghost">← Cycles</a>
+</div>
+
+<div class="card" style="max-width:660px;">
+    <p class="section-label">Cycle</p>
+    <p style="font-size:1rem;font-weight:600;margin-bottom:1.5rem;">{{ cycle.title }}</p>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            <p class="helptext">Reflect on your accomplishments and progress on your goals for this cycle.</p>
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg">
+                {% if assessment.text %}Update Assessment{% else %}Submit Assessment{% endif %}
+            </button>
+            <a href="{% url 'cycle_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

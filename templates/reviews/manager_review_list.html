@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Team Reviews — Team Performance{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Team <span>Reviews</span></h1>
+</div>
+
+<!-- Filter bar -->
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label>Cycle</label>
+        <select name="cycle" onchange="this.form.submit()">
+            <option value="">All active cycles</option>
+            {% for c in cycles %}{% if c.status == 'UNDER_REVIEW' %}
+            <option value="{{ c.pk }}" {% if cycle_filter == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.title }}</option>
+            {% endif %}{% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Employee</label>
+        <select name="employee" onchange="this.form.submit()">
+            <option value="">All team members</option>
+            {% for emp in direct_reports %}
+            <option value="{{ emp.pk }}" {% if employee_filter == emp.pk|stringformat:"s" %}selected{% endif %}>{{ emp.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Review Status</label>
+        <select name="status" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            <option value="NOT_STARTED" {% if status_filter == 'NOT_STARTED' %}selected{% endif %}>Not Started</option>
+            <option value="PENDING"     {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+            <option value="FINALIZED"   {% if status_filter == 'FINALIZED' %}selected{% endif %}>Finalized</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Self-Assessment</label>
+        <select name="sa" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="yes" {% if sa_filter == 'yes' %}selected{% endif %}>Submitted</option>
+            <option value="no"  {% if sa_filter == 'no' %}selected{% endif %}>Not Submitted</option>
+        </select>
+    </div>
+    <input type="hidden" name="sort" value="{{ sort }}">
+    {% if cycle_filter or status_filter or sa_filter or employee_filter %}
+    <a href="{% url 'manager_review_list' %}" class="btn btn-ghost btn-sm" style="align-self:flex-end;">✕ Clear</a>
+    {% endif %}
+</form>
+
+<div class="table-wrap">
+    {% if review_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={% if sort == 'employee' %}-employee{% else %}employee{% endif %}"
+                       class="{% if sort == 'employee' or sort == '-employee' %}active{% endif %}">
+                        Employee {% if sort == 'employee' %}↑{% elif sort == '-employee' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={% if sort == 'cycle' %}-cycle{% else %}cycle{% endif %}"
+                       class="{% if sort == 'cycle' or sort == '-cycle' %}active{% endif %}">
+                        Cycle {% if sort == 'cycle' %}↑{% elif sort == '-cycle' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>Self-Assessment</th>
+                <th>
+                    <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={% if sort == 'status' %}-status{% else %}status{% endif %}"
+                       class="{% if sort == 'status' or sort == '-status' %}active{% endif %}">
+                        Review Status {% if sort == 'status' %}↑{% elif sort == '-status' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>Rating</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in review_data %}
+            <tr>
+                <td><strong>{{ item.employee.username }}</strong></td>
+                <td class="muted">{{ item.cycle.title }}</td>
+                <td>
+                    {% if item.has_self_assessment %}<span class="badge badge-yes">Submitted</span>
+                    {% else %}<span class="badge badge-no">Not submitted</span>{% endif %}
+                </td>
+                <td>
+                    {% if item.review %}<span class="badge badge-{{ item.review.status|lower }}">{{ item.review.get_status_display }}</span>
+                    {% else %}<span class="badge badge-not_started">Not started</span>{% endif %}
+                </td>
+                <td>
+                    {% if item.review and item.review.status == 'FINALIZED' %}
+                    <span class="stars" style="font-size:0.85rem;">
+                        {% for i in "12345" %}{% if forloop.counter <= item.review.rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                    </span>
+                    <span class="muted" style="font-size:0.78rem;">{{ item.review.rating }}/5</span>
+                    {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+                <td>
+                    {% if item.review and item.review.status == 'FINALIZED' %}
+                    <a href="{% url 'manager_review_detail' item.cycle.pk item.employee.pk %}" class="btn btn-view btn-sm">View</a>
+                    {% else %}
+                    <a href="{% url 'manager_review_submit' item.cycle.pk item.employee.pk %}" class="btn btn-primary btn-sm">Write Review</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span>{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries</span>
+        <div class="pagination-links">
+            {% if page_obj.has_previous %}
+            <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}" class="page-link">‹</a>
+            {% else %}<span class="page-link disabled">‹</span>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-link current">{{ num }}</span>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={{ sort }}&page={{ num }}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?cycle={{ cycle_filter }}&employee={{ employee_filter }}&status={{ status_filter }}&sa={{ sa_filter }}&sort={{ sort }}&page={{ page_obj.next_page_number }}" class="page-link">›</a>
+            {% else %}<span class="page-link disabled">›</span>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>No reviews found{% if status_filter or sa_filter or cycle_filter or employee_filter %} matching these filters{% endif %}.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

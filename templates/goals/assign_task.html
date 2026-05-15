@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Assign Task — Team Performance{% endblock %}
+{% block nav_goals %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Assign <span>Task</span></h1>
+    <a href="{% url 'goal_list' %}" class="btn btn-ghost">← Goals</a>
+</div>
+
+<div class="card" style="max-width:580px;">
+    <p class="muted" style="margin-bottom:1.5rem;font-size:0.875rem;">
+        Select an employee from your team, choose a review cycle, and describe the task/goal.
+    </p>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="helptext">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        {% if form.non_field_errors %}
+        <ul class="errorlist" style="margin-bottom:1rem;">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg">Assign Task</button>
+            <a href="{% url 'goal_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

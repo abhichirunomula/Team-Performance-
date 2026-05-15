@@ -4,8 +4,12 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">My <span>Goals</span></h1>
+    <h1 class="page-title">{% if request.user.role == 'MANAGER' %}Team <span>Tasks</span>{% else %}My <span>Goals</span>{% endif %}</h1>
+    {% if request.user.role == 'MANAGER' %}
+    <a href="{% url 'assign_task' %}" class="btn btn-primary">＋ Assign Task</a>
+    {% else %}
     <a href="{% url 'create_goal' %}" class="btn btn-primary">＋ New Goal</a>
+    {% endif %}
 </div>
 
 <!-- Filter bar -->
@@ -90,10 +94,19 @@
                 <td><span class="badge badge-{{ goal.status|lower }}">{{ goal.get_status_display }}</span></td>
                 <td class="muted" style="white-space:nowrap;">{{ goal.created_at|date:"M j, Y" }}</td>
                 <td>
-                    {% if request.user == goal.employee and goal.review_cycle.status == 'OPEN' %}
-                    <div style="display:flex;gap:0.4rem;">
+                    {% if request.user == goal.employee %}
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                        <a href="{% url 'update_goal_status' goal.pk %}" class="btn btn-primary btn-sm">Update Status</a>
+                        {% if goal.review_cycle.status == 'OPEN' %}
                         <a href="{% url 'edit_goal' goal.pk %}" class="btn btn-ghost btn-sm">Edit</a>
                         <a href="{% url 'delete_goal' goal.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        {% endif %}
+                    </div>
+                    {% elif request.user.role == 'MANAGER' %}
+                    <div style="display:flex;gap:0.4rem;">
+                        {% if goal.review_cycle.status == 'OPEN' %}
+                        <a href="{% url 'delete_goal' goal.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                        {% endif %}
                     </div>
                     {% else %}
                     <span class="muted" style="font-size:0.78rem;">—</span>

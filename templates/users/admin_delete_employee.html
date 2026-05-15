@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Delete Employee — Admin Panel{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:4rem auto;text-align:center;">
+    <div class="card">
+        <div style="font-size:3rem;margin-bottom:1rem;">🗑️</div>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:0.75rem;">Delete Employee?</h2>
+        <p style="color:var(--accent2);font-size:1rem;font-weight:600;margin-bottom:1rem;">{{ employee.username }}</p>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin-bottom:2rem;">
+            This action is <strong style="color:#fca5a5;">permanent</strong> and cannot be undone.
+            All goals and reviews for this employee will also be deleted.
+        </p>
+        <div class="actions-row" style="justify-content:center;">
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg">Yes, Delete Permanently</button>
+            </form>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

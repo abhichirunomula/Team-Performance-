@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Create Manager — Admin Panel{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Create <span>Manager</span></h1>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost">← Admin Panel</a>
+</div>
+
+<div class="card" style="max-width:560px;">
+    <div class="status-box status-info" style="margin-bottom:1.5rem;">
+        🛡️ Creating a <strong>Manager</strong> account. Managers can add employees and assign tasks.
+    </div>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="helptext">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg">Create Manager</button>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

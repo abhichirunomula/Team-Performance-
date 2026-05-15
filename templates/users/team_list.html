@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}My Team — Team Performance{% endblock %}
+{% block nav_goals %}{% endblock %}
+
+{% block extra_css %}
+.team-role-badge { font-size:0.7rem; color:var(--muted); margin-left:0.5rem; }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">My <span>Team</span></h1>
+    <a href="{% url 'add_employee' %}" class="btn btn-primary">＋ Add Employee</a>
+</div>
+
+{% if team %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Goals</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for emp in team %}
+            <tr>
+                <td>
+                    <strong>{{ emp.username }}</strong>
+                    <span class="badge badge-not_started" style="margin-left:0.5rem;">Employee</span>
+                </td>
+                <td class="muted">{{ emp.get_full_name|default:"—" }}</td>
+                <td class="muted">{{ emp.email|default:"—" }}</td>
+                <td>
+                    <a href="{% url 'goal_list' %}?employee={{ emp.pk }}" class="btn btn-view btn-sm">
+                        View Goals
+                    </a>
+                </td>
+                <td>
+                    <div style="display:flex;gap:0.4rem;">
+                        <a href="{% url 'assign_task' %}?employee={{ emp.pk }}" class="btn btn-primary btn-sm">Assign Task</a>
+                        <a href="{% url 'remove_employee' emp.pk %}" class="btn btn-danger btn-sm">Remove</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="icon">👥</div>
+    <p>No employees in your team yet.</p>
+    <a href="{% url 'add_employee' %}" class="btn btn-primary" style="margin-top:1.25rem;">Add First Employee</a>
+</div>
+{% endif %}
+{% endblock %}

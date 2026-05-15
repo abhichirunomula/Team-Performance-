@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ manager.username }}'s Team — Admin Panel{% endblock %}
+{% block nav_admin %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Manager: <span>{{ manager.username }}</span></h1>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost">← Admin Panel</a>
+</div>
+
+<div class="stats-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:2rem;">
+    <div class="stat-card purple">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value">{{ team.count }}</div>
+        <div class="stat-label">Team Members</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon">👤</div>
+        <div class="stat-value">{{ unassigned.count }}</div>
+        <div class="stat-label">Unassigned Employees</div>
+    </div>
+</div>
+
+<!-- Current Team -->
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Current Team</span>
+    </div>
+    <div class="table-wrap">
+        {% if team %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in team %}
+                <tr>
+                    <td><strong>{{ emp.username }}</strong></td>
+                    <td class="muted">{{ emp.get_full_name|default:"—" }}</td>
+                    <td class="muted">{{ emp.email|default:"—" }}</td>
+                    <td>
+                        <a href="{% url 'admin_assign_manager' emp.pk %}" class="btn btn-ghost btn-sm">Reassign</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state"><div class="icon">👥</div><p>No employees in this team yet.</p></div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Assign Unassigned -->
+{% if unassigned %}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Add Unassigned Employees to This Team</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Username</th><th>Email</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for emp in unassigned %}
+                <tr>
+                    <td><strong>{{ emp.username }}</strong></td>
+                    <td class="muted">{{ emp.email|default:"—" }}</td>
+                    <td>
+                        <a href="{% url 'admin_assign_manager' emp.pk %}?manager={{ manager.pk }}"
+                           class="btn btn-primary btn-sm">Assign to {{ manager.username }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

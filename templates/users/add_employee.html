@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Add Employee — Team Performance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Add <span>Employee</span></h1>
+    <a href="{% url 'team_list' %}" class="btn btn-ghost">← My Team</a>
+</div>
+
+<div class="card" style="max-width:560px;">
+    <p class="muted" style="margin-bottom:1.5rem;font-size:0.875rem;">
+        This will create a new employee account and automatically assign them to your team.
+    </p>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="helptext">{{ field.help_text }}</p>{% endif %}
+            {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        {% endfor %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <button type="submit" class="btn btn-primary btn-lg">Create Employee Account</button>
+            <a href="{% url 'team_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
