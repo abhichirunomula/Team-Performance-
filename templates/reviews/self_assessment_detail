@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Self-Assessment — {{ cycle.title }}{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">My <span>Assessment</span></h1>
+    <a href="{% url 'cycle_list' %}" class="btn btn-ghost">← Cycles</a>
+</div>
+
+<div class="card" style="max-width:660px;">
+    <p class="section-label">Cycle</p>
+    <p style="font-size:1rem;font-weight:600;margin-bottom:1.5rem;">{{ cycle.title }}</p>
+
+    {% if assessment %}
+        <p class="section-label">Your Submission</p>
+        <p class="text-body">{{ assessment.text }}</p>
+
+        <hr class="divider">
+
+        <p class="section-label">Manager Review</p>
+        {% if finalized_review %}
+            <div class="status-box status-finalized">✅ Your manager has finalized your review.</div>
+            <p class="section-label" style="margin-top:1rem;">Manager Assessment</p>
+            <p class="text-body">{{ finalized_review.manager_assessment }}</p>
+            <hr class="divider">
+            <p class="section-label">Overall Rating</p>
+            <div class="rating-display">
+                <span class="rating-stars">
+                    {% for i in "12345" %}{% if forloop.counter <= finalized_review.rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                </span>
+                <span class="rating-number">{{ finalized_review.rating }} / 5</span>
+            </div>
+        {% else %}
+            <div class="status-box status-pending">⏳ Your manager's review is pending. You'll see feedback once it's finalized.</div>
+        {% endif %}
+
+        {% if not finalized_review and cycle.status == 'UNDER_REVIEW' %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <a href="{% url 'self_assessment_submit' cycle.pk %}" class="btn btn-primary">Edit Assessment</a>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <p class="hidden-note">You haven't submitted a self-assessment for this cycle yet.</p>
+        {% if cycle.status == 'UNDER_REVIEW' %}
+        <div class="actions-row" style="margin-top:1.5rem;">
+            <a href="{% url 'self_assessment_submit' cycle.pk %}" class="btn btn-primary">Submit Self-Assessment</a>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

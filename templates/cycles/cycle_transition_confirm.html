@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Confirm Transition — Team Performance{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:4rem auto;text-align:center;">
+    <div class="card">
+        <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem;">Confirm Status Change</h2>
+        <p style="color:var(--muted);font-size:0.9rem;line-height:1.7;margin-bottom:2rem;">
+            You are about to move <strong style="color:var(--text);">{{ cycle.title }}</strong> from
+            <strong style="color:var(--text);">{{ cycle.get_status_display }}</strong> to
+            <strong style="color:var(--accent2);">{{ next_label }}</strong>.<br><br>
+            This action cannot be undone.
+        </p>
+        <div class="actions-row" style="justify-content:center;">
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warn btn-lg">Yes, Proceed</button>
+            </form>
+            <a href="{% url 'cycle_detail' cycle.pk %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Review Cycles — Team Performance{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Review <span>Cycles</span></h1>
+    {% if request.user.role == 'MANAGER' %}
+    <a href="{% url 'cycle_create' %}" class="btn btn-primary">＋ New Cycle</a>
+    {% endif %}
+</div>
+
+{% if cycles %}
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+                <th>Created By</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cycle in cycles %}
+            <tr>
+                <td><strong>{{ cycle.title }}</strong></td>
+                <td class="muted">{{ cycle.start_date }}</td>
+                <td class="muted">{{ cycle.end_date }}</td>
+                <td><span class="badge badge-{{ cycle.status|lower }}">{{ cycle.get_status_display }}</span></td>
+                <td class="muted">{{ cycle.created_by.username }}</td>
+                <td>
+                    <a href="{% url 'cycle_detail' cycle.pk %}" class="btn btn-view btn-sm">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="icon">🔄</div>
+    <p>No review cycles yet.</p>
+    {% if request.user.role == 'MANAGER' %}
+    <a href="{% url 'cycle_create' %}" class="btn btn-primary" style="margin-top:1.25rem;">Create First Cycle</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Team Performance{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0c0c12;
+            --surface: #161620;
+            --surface2: #1e1e2a;
+            --border: #2a2a3a;
+            --accent: #7c6af7;
+            --accent2: #a78bfa;
+            --accent3: #c4b5fd;
+            --text: #e8e8f2;
+            --muted: #7878a0;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* ---- Layout ---- */
+        .layout { display: flex; min-height: 100vh; }
+
+        /* ---- Sidebar ---- */
+        .sidebar {
+            width: 240px; flex-shrink: 0;
+            background: var(--surface); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 1.5rem 0;
+            position: sticky; top: 0; height: 100vh; overflow-y: auto;
+        }
+        .sidebar-logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+        .sidebar-logo .brand { font-size: 1rem; font-weight: 700; color: var(--accent3); letter-spacing: -0.02em; }
+        .sidebar-logo .brand-sub { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+        .nav-section { padding: 0 1rem; margin-bottom: 0.5rem; }
+        .nav-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0 0.5rem; margin-bottom: 0.4rem; }
+        .nav-item {
+            display: flex; align-items: center; gap: 0.65rem;
+            padding: 0.6rem 0.75rem; border-radius: 8px;
+            font-size: 0.875rem; color: var(--muted);
+            text-decoration: none; margin-bottom: 0.1rem; transition: all 0.15s;
+        }
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active { background: rgba(124,106,247,.15); color: var(--accent2); }
+        .nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+        .sidebar-footer { margin-top: auto; padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); }
+        .user-info { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem; color: #fff; flex-shrink: 0;
+        }
+        .user-name { font-size: 0.875rem; font-weight: 500; }
+        .user-role { font-size: 0.72rem; color: var(--muted); }
+        .logout-btn {
+            display: block; width: 100%; padding: 0.5rem; text-align: center;
+            background: var(--surface2); border: 1px solid var(--border);
+            color: var(--muted); border-radius: 6px; font-size: 0.8rem;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .logout-btn:hover { color: var(--text); border-color: var(--accent); }
+
+        /* ---- Main ---- */
+        .main { flex: 1; padding: 2.5rem; overflow-y: auto; min-width: 0; }
+
+        /* ---- Page header ---- */
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        h1.page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+        h1.page-title span { color: var(--accent2); }
+
+        /* ---- Messages ---- */
+        .messages { list-style: none; margin-bottom: 1.25rem; }
+        .messages li { padding: 0.7rem 1rem; border-radius: 6px; font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .messages .success { background: rgba(16,185,129,.15); color: #6ee7b7; border-left: 3px solid var(--success); }
+        .messages .error   { background: rgba(239,68,68,.15);  color: #fca5a5; border-left: 3px solid var(--danger); }
+        .messages .info    { background: rgba(124,106,247,.15); color: var(--accent2); border-left: 3px solid var(--accent); }
+        .messages .warning { background: rgba(245,158,11,.15); color: #fbbf24; border-left: 3px solid var(--warn); }
+
+        /* ---- Card ---- */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; }
+        .card-sm { padding: 1.25rem 1.5rem; }
+
+        /* ---- Table ---- */
+        .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--surface2); }
+        th { padding: 0.85rem 1rem; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; white-space: nowrap; }
+        th a { color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; }
+        th a:hover, th a.active { color: var(--accent2); }
+        td { padding: 0.9rem 1rem; border-top: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
+        tr:hover td { background: rgba(124,106,247,.04); }
+
+        /* ---- Badges ---- */
+        .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em; }
+        .badge-open        { background: rgba(59,130,246,.15); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+        .badge-under_review{ background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+        .badge-closed      { background: rgba(136,136,168,.15); color: var(--muted); border: 1px solid rgba(136,136,168,.3); }
+        .badge-pending     { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+        .badge-finalized   { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-not_started { background: rgba(136,136,168,.15); color: var(--muted); border: 1px solid rgba(136,136,168,.3); }
+        .badge-in_progress { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+        .badge-completed   { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-yes         { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+        .badge-no          { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+        .badge-warn        { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+        .badge-submitted   { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+
+        /* ---- Buttons ---- */
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.5rem 1rem; border: none; border-radius: 8px;
+            font-size: 0.875rem; font-family: inherit; font-weight: 500;
+            cursor: pointer; text-decoration: none; transition: all 0.15s;
+        }
+        .btn-primary   { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #6a5ce6; }
+        .btn-ghost     { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+        .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+        .btn-danger    { background: rgba(239,68,68,.15); color: #fca5a5; border: 1px solid rgba(239,68,68,.3); }
+        .btn-danger:hover { background: rgba(239,68,68,.3); }
+        .btn-warn      { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+        .btn-warn:hover { background: rgba(245,158,11,.3); }
+        .btn-view      { background: rgba(124,106,247,.15); color: var(--accent2); border: 1px solid rgba(124,106,247,.3); }
+        .btn-view:hover { background: rgba(124,106,247,.3); }
+        .btn-sm        { padding: 0.3rem 0.65rem; font-size: 0.78rem; border-radius: 6px; }
+        .btn-lg        { padding: 0.75rem 1.5rem; font-size: 1rem; }
+        .btn-block     { display: flex; width: 100%; justify-content: center; }
+
+        /* ---- Form fields ---- */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%; background: var(--surface2); border: 1px solid var(--border);
+            color: var(--text); border-radius: 8px; padding: 0.65rem 0.9rem;
+            font-size: 0.9rem; font-family: inherit; transition: border-color 0.15s;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { outline: none; border-color: var(--accent); }
+        .form-group textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+        .errorlist { list-style: none; margin-top: 0.35rem; }
+        .errorlist li { font-size: 0.8rem; color: #fca5a5; }
+        .helptext { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
+
+        /* ---- Filter bar ---- */
+        .filter-bar {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+            display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .filter-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+        .filter-group select {
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+            border-radius: 6px; padding: 0.45rem 0.75rem; font-size: 0.875rem; font-family: inherit;
+            cursor: pointer; min-width: 150px;
+        }
+        .filter-group select:focus { outline: none; border-color: var(--accent); }
+
+        /* ---- Section label / divider ---- */
+        .section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.5rem; }
+        .text-body { font-size: 0.92rem; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+        .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+        /* ---- Status boxes ---- */
+        .status-box { padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.9rem; }
+        .status-pending   { background: rgba(245,158,11,.1); color: #fbbf24; border-left: 4px solid var(--warn); }
+        .status-finalized { background: rgba(16,185,129,.1); color: #6ee7b7; border-left: 4px solid var(--success); }
+        .status-info      { background: rgba(124,106,247,.1); color: var(--accent2); border-left: 4px solid var(--accent); }
+
+        /* ---- Warning box ---- */
+        .warning-box { background: rgba(245,158,11,.1); border-left: 4px solid var(--warn); padding: 0.9rem 1.1rem; border-radius: 6px; font-size: 0.875rem; color: #fbbf24; margin-bottom: 1.5rem; }
+
+        /* ---- Meta grid ---- */
+        .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .meta-item label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: block; margin-bottom: 0.3rem; }
+        .meta-item span { font-size: 0.95rem; }
+
+        /* ---- Stat cards ---- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            padding: 1.25rem 1.5rem; position: relative; overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .stat-card.purple::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+        .stat-card.green::before  { background: linear-gradient(90deg, #059669, var(--success)); }
+        .stat-card.amber::before  { background: linear-gradient(90deg, #d97706, var(--warn)); }
+        .stat-card.blue::before   { background: linear-gradient(90deg, #1d4ed8, var(--info)); }
+        .stat-icon  { font-size: 1.5rem; margin-bottom: 0.75rem; }
+        .stat-value { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.3rem; }
+        .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+        /* ---- Progress bar ---- */
+        .progress-wrap { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; margin-top: 0.5rem; }
+        .progress-bar  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s ease; }
+
+        /* ---- Pagination ---- */
+        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--muted); }
+        .pagination-links { display: flex; gap: 0.4rem; }
+        .page-link { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 6px; text-decoration: none; color: var(--muted); border: 1px solid var(--border); font-size: 0.82rem; transition: all 0.15s; }
+        .page-link:hover { color: var(--text); border-color: var(--accent); }
+        .page-link.current { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .page-link.disabled { opacity: 0.35; pointer-events: none; }
+
+        /* ---- Empty state ---- */
+        .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+        .empty-state p { font-size: 0.95rem; }
+        .empty-inline { color: var(--muted); font-size: 0.85rem; padding: 1.5rem 1.25rem; text-align: center; }
+
+        /* ---- List card ---- */
+        .list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .list-card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; }
+        .list-item { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; transition: background 0.12s; }
+        .list-item:last-child { border-bottom: none; }
+        .list-item:hover { background: var(--surface2); }
+        .list-item-left { display: flex; flex-direction: column; gap: 0.15rem; }
+        .list-item-name { font-weight: 500; }
+        .list-item-sub  { font-size: 0.75rem; color: var(--muted); }
+
+        /* ---- Stars ---- */
+        .stars { letter-spacing: 0.05em; }
+
+        /* ---- Rating display ---- */
+        .rating-display { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+        .rating-stars   { font-size: 1.4rem; letter-spacing: 0.05em; }
+        .rating-number  { font-size: 1rem; color: var(--muted); }
+
+        /* ---- CTA card ---- */
+        .cta-card {
+            background: linear-gradient(135deg, rgba(124,106,247,.15), rgba(167,139,250,.08));
+            border: 1px solid rgba(124,106,247,.3); border-radius: 12px; padding: 1.25rem 1.5rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            margin-bottom: 1.25rem; flex-wrap: wrap;
+        }
+        .cta-text h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+        .cta-text p  { font-size: 0.82rem; color: var(--muted); }
+
+        /* ---- Cards row ---- */
+        .cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+        @media (max-width: 900px) { .cards-row { grid-template-columns: 1fr; } }
+
+        /* ---- Section ---- */
+        .section { margin-bottom: 2rem; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .section-title { font-size: 1rem; font-weight: 600; }
+        .section-link { font-size: 0.8rem; color: var(--accent2); text-decoration: none; }
+        .section-link:hover { color: var(--accent3); }
+
+        /* ---- Misc ---- */
+        .actions-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .muted { color: var(--muted); }
+        .hidden-note { color: var(--muted); font-style: italic; font-size: 0.9rem; }
+        .closed-note { color: var(--muted); font-style: italic; font-size: 0.875rem; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main { padding: 1.5rem; }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="brand">⚡ PerfTrack</div>
+            <div class="brand-sub">Team Performance Hub</div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">Navigation</div>
+            <a href="/" class="nav-item {% block nav_dashboard %}{% endblock %}">
+                <span class="icon">🏠</span> Dashboard
+            </a>
+            <a href="/goals/" class="nav-item {% block nav_goals %}{% endblock %}">
+                <span class="icon">🎯</span> Goals
+            </a>
+            <a href="/cycles/" class="nav-item {% block nav_cycles %}{% endblock %}">
+                <span class="icon">🔄</span> Review Cycles
+            </a>
+            {% if request.user.role == 'MANAGER' %}
+            <a href="/reviews/" class="nav-item {% block nav_reviews %}{% endblock %}">
+                <span class="icon">📋</span> Team Reviews
+            </a>
+            {% endif %}
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar">{{ request.user.username|first|upper }}</div>
+                <div>
+                    <div class="user-name">{{ request.user.username }}</div>
+                    <div class="user-role">{{ request.user.get_role_display }}</div>
+                </div>
+            </div>
+            <form method="post" action="/logout/">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Sign out</button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

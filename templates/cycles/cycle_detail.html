@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ cycle.title }} — Team Performance{% endblock %}
+{% block nav_cycles %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{{ cycle.title }}</h1>
+    <a href="{% url 'cycle_list' %}" class="btn btn-ghost">← All Cycles</a>
+</div>
+
+<div class="card" style="max-width:680px;">
+    <div class="meta-grid">
+        <div class="meta-item">
+            <label>Status</label>
+            <span><span class="badge badge-{{ cycle.status|lower }}">{{ cycle.get_status_display }}</span></span>
+        </div>
+        <div class="meta-item">
+            <label>Created By</label>
+            <span>{{ cycle.created_by.username }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Start Date</label>
+            <span>{{ cycle.start_date }}</span>
+        </div>
+        <div class="meta-item">
+            <label>End Date</label>
+            <span>{{ cycle.end_date }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Created At</label>
+            <span>{{ cycle.created_at|date:"N j, Y" }}</span>
+        </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="actions-row">
+        {% if request.user.role == 'MANAGER' and cycle.created_by == request.user %}
+            {% if cycle.status == 'OPEN' %}
+            <a href="{% url 'cycle_transition' cycle.pk %}" class="btn btn-warn">
+                Move to Under Review →
+            </a>
+            {% elif cycle.status == 'UNDER_REVIEW' %}
+            <a href="{% url 'cycle_transition' cycle.pk %}" class="btn btn-warn">
+                Close Cycle →
+            </a>
+            {% else %}
+            <span class="closed-note">This cycle is closed and read-only.</span>
+            {% endif %}
+        {% endif %}
+        <a href="{% url 'cycle_list' %}" class="btn btn-ghost">Back to List</a>
+    </div>
+</div>
+{% endblock %}

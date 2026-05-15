@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}My Goals — Team Performance{% endblock %}
+{% block nav_goals %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">My <span>Goals</span></h1>
+    <a href="{% url 'create_goal' %}" class="btn btn-primary">＋ New Goal</a>
+</div>
+
+<!-- Filter bar -->
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label>Status</label>
+        <select name="status" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Cycle</label>
+        <select name="cycle" onchange="this.form.submit()">
+            <option value="">All cycles</option>
+            {% for c in cycles %}
+            <option value="{{ c.pk }}" {% if cycle_filter == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if direct_reports %}
+    <div class="filter-group">
+        <label>Employee</label>
+        <select name="employee" onchange="this.form.submit()">
+            <option value="">All team members</option>
+            {% for emp in direct_reports %}
+            <option value="{{ emp.pk }}" {% if request.GET.employee == emp.pk|stringformat:"s" %}selected{% endif %}>{{ emp.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    <input type="hidden" name="sort" value="{{ sort }}">
+    {% if status_filter or cycle_filter or request.GET.employee %}
+    <a href="{% url 'goal_list' %}" class="btn btn-ghost btn-sm" style="align-self:flex-end;">✕ Clear</a>
+    {% endif %}
+</form>
+
+<div class="table-wrap">
+    {% if page_obj.object_list %}
+    <table>
+        <thead>
+            <tr>
+                <th>
+                    <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={% if sort == 'title' %}-title{% else %}title{% endif %}"
+                       class="{% if sort == 'title' or sort == '-title' %}active{% endif %}">
+                        Title {% if sort == 'title' %}↑{% elif sort == '-title' %}↓{% endif %}
+                    </a>
+                </th>
+                {% if request.user.role == 'MANAGER' %}<th>Employee</th>{% endif %}
+                <th>
+                    <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={% if sort == 'cycle' %}-cycle{% else %}cycle{% endif %}"
+                       class="{% if sort == 'cycle' or sort == '-cycle' %}active{% endif %}">
+                        Cycle {% if sort == 'cycle' %}↑{% elif sort == '-cycle' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={% if sort == 'status' %}-status{% else %}status{% endif %}"
+                       class="{% if sort == 'status' or sort == '-status' %}active{% endif %}">
+                        Status {% if sort == 'status' %}↑{% elif sort == '-status' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={% if sort == 'created_at' %}-created_at{% else %}created_at{% endif %}"
+                       class="{% if sort == 'created_at' or sort == '-created_at' %}active{% endif %}">
+                        Created {% if sort == 'created_at' %}↑{% elif sort == '-created_at' %}↓{% endif %}
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for goal in page_obj.object_list %}
+            <tr>
+                <td>
+                    <strong>{{ goal.title }}</strong>
+                    {% if goal.description %}<p class="muted" style="font-size:0.78rem;margin-top:0.2rem;">{{ goal.description|truncatechars:80 }}</p>{% endif %}
+                </td>
+                {% if request.user.role == 'MANAGER' %}<td class="muted">{{ goal.employee.username }}</td>{% endif %}
+                <td class="muted">{{ goal.review_cycle.title }}</td>
+                <td><span class="badge badge-{{ goal.status|lower }}">{{ goal.get_status_display }}</span></td>
+                <td class="muted" style="white-space:nowrap;">{{ goal.created_at|date:"M j, Y" }}</td>
+                <td>
+                    {% if request.user == goal.employee and goal.review_cycle.status == 'OPEN' %}
+                    <div style="display:flex;gap:0.4rem;">
+                        <a href="{% url 'edit_goal' goal.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                        <a href="{% url 'delete_goal' goal.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                    </div>
+                    {% else %}
+                    <span class="muted" style="font-size:0.78rem;">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        <span>{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} goals</span>
+        <div class="pagination-links">
+            {% if page_obj.has_previous %}
+            <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}" class="page-link">‹</a>
+            {% else %}<span class="page-link disabled">‹</span>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-link current">{{ num }}</span>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={{ sort }}&page={{ num }}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?status={{ status_filter }}&cycle={{ cycle_filter }}&sort={{ sort }}&page={{ page_obj.next_page_number }}" class="page-link">›</a>
+            {% else %}<span class="page-link disabled">›</span>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">🎯</div>
+        <p>No goals found{% if status_filter or cycle_filter %} matching these filters{% endif %}.</p>
+        {% if not status_filter and not cycle_filter %}
+        <a href="{% url 'create_goal' %}" class="btn btn-primary" style="margin-top:1.25rem;">Create your first goal</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

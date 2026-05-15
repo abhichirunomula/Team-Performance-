@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Review Detail — {{ employee.username }}{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Performance <span>Review</span></h1>
+    {% if request.user.role == 'MANAGER' %}
+    <a href="{% url 'manager_review_list' %}" class="btn btn-ghost">← Review List</a>
+    {% else %}
+    <a href="{% url 'cycle_list' %}" class="btn btn-ghost">← Cycles</a>
+    {% endif %}
+</div>
+
+<div class="card" style="max-width:680px;">
+    <div class="meta-grid" style="margin-bottom:1.5rem;">
+        <div class="meta-item">
+            <label>Employee</label>
+            <span>{{ employee.username }}</span>
+        </div>
+        <div class="meta-item">
+            <label>Cycle</label>
+            <span>{{ cycle.title }}</span>
+        </div>
+    </div>
+
+    {% if review %}
+        {% if review.status == 'FINALIZED' %}
+            <div class="status-box status-finalized">✅ Review finalized on {{ review.finalized_at|date:"N j, Y" }}</div>
+        {% else %}
+            <div class="status-box status-pending">⏳ Review is pending — manager has not finalized yet.</div>
+        {% endif %}
+
+        <hr class="divider">
+
+        <p class="section-label">Self-Assessment</p>
+        <p class="text-body">
+            {% if request.user.role == 'MANAGER' %}
+                {{ employee.username }}'s self-assessment is visible on the Write Review page.
+            {% else %}
+                Your self-assessment has been submitted.
+            {% endif %}
+        </p>
+
+        <hr class="divider">
+
+        <p class="section-label">Manager Assessment</p>
+        {% if show_manager_feedback %}
+            <p class="text-body">{{ review.manager_assessment }}</p>
+            <hr class="divider">
+            <p class="section-label">Overall Rating</p>
+            <div class="rating-display">
+                <span class="rating-stars">
+                    {% for i in "12345" %}{% if forloop.counter <= review.rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                </span>
+                <span class="rating-number">{{ review.rating }} / 5</span>
+            </div>
+            <p class="muted" style="font-size:0.82rem;margin-top:1rem;">
+                Reviewed by {{ review.manager.username }}
+                {% if review.finalized_at %} · Finalized {{ review.finalized_at|date:"N j, Y" }}{% endif %}
+            </p>
+        {% else %}
+            <p class="hidden-note">Your manager's assessment and rating are hidden until the review is finalized.</p>
+        {% endif %}
+
+    {% else %}
+        <p class="hidden-note">No review has been created for this cycle yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

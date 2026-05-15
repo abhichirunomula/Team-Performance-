@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Delete Goal — Team Performance{% endblock %}
+{% block nav_goals %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:4rem auto;text-align:center;">
+    <div class="card">
+        <div style="font-size:3rem;margin-bottom:1rem;">🗑️</div>
+        <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:0.75rem;">Delete Goal?</h2>
+        <p style="color:var(--accent2);font-style:italic;font-size:0.95rem;margin-bottom:1rem;">"{{ goal.title }}"</p>
+        <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin-bottom:2rem;">
+            This action cannot be undone. The goal will be permanently removed.
+        </p>
+        <div class="actions-row" style="justify-content:center;">
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg">Yes, Delete</button>
+            </form>
+            <a href="{% url 'goal_list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

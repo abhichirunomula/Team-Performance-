@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Team Performance{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Welcome back, <span>{{ request.user.username }}</span> 👋</h1>
+        <p class="muted" style="font-size:0.9rem;margin-top:0.3rem;">{% now "l, N j, Y" %} &nbsp;·&nbsp; {{ request.user.get_role_display }}</p>
+    </div>
+</div>
+
+{% if request.user.role == 'EMPLOYEE' %}
+<!-- ===== EMPLOYEE DASHBOARD ===== -->
+
+{% for cycle in pending_sa_cycles %}
+<div class="cta-card">
+    <div class="cta-text">
+        <h3>📝 Self-assessment due</h3>
+        <p>Cycle "<strong>{{ cycle.title }}</strong>" is under review — submit your self-assessment.</p>
+    </div>
+    <a href="/reviews/cycles/{{ cycle.pk }}/self-assessment/" class="btn btn-primary">Submit Now</a>
+</div>
+{% endfor %}
+
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-value">{{ goal_counts.total }}</div>
+        <div class="stat-label">Total Goals</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">🔵</div>
+        <div class="stat-value">{{ goal_counts.not_started }}</div>
+        <div class="stat-label">Not Started</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon">⚙️</div>
+        <div class="stat-value">{{ goal_counts.in_progress }}</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">{{ goal_counts.completed }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+</div>
+
+{% if goal_counts.total > 0 %}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Goal Completion</span>
+        <span class="muted" style="font-size:0.8rem;">{{ goal_counts.completed }} / {{ goal_counts.total }}</span>
+    </div>
+    <div class="progress-wrap">
+        {% widthratio goal_counts.completed goal_counts.total 100 as pct %}
+        <div class="progress-bar" style="width:{{ pct }}%"></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="cards-row">
+    <div class="list-card">
+        <div class="list-card-header">🔄 Active Cycles</div>
+        {% for cycle in active_cycles %}
+        <div class="list-item">
+            <div class="list-item-left">
+                <div class="list-item-name">{{ cycle.title }}</div>
+                <div class="list-item-sub">{{ cycle.start_date }} – {{ cycle.end_date }}</div>
+            </div>
+            <span class="badge badge-{{ cycle.status|lower }}">{{ cycle.get_status_display }}</span>
+        </div>
+        {% empty %}
+        <div class="empty-inline">No active cycles right now.</div>
+        {% endfor %}
+    </div>
+
+    <div class="list-card">
+        <div class="list-card-header">
+            📄 My Reviews
+            {% if pending_reviews_count > 0 %}
+            <span class="badge badge-warn" style="margin-left:.5rem;">{{ pending_reviews_count }} pending</span>
+            {% endif %}
+        </div>
+        {% for review in finalized_reviews %}
+        <div class="list-item">
+            <div class="list-item-left">
+                <div class="list-item-name">{{ review.review_cycle.title }}</div>
+                <div class="list-item-sub">By {{ review.manager.username }} · {{ review.finalized_at|date:"M j, Y" }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="stars" style="font-size:0.8rem;">
+                    {% for i in "12345" %}{% if forloop.counter <= review.rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                </div>
+                <div class="muted" style="font-size:0.72rem;">{{ review.rating }}/5</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-inline">No finalized reviews yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header"><span class="section-title">Quick Actions</span></div>
+    <div class="actions-row">
+        <a href="/goals/create/" class="btn btn-primary">＋ New Goal</a>
+        <a href="/goals/" class="btn btn-ghost">View All Goals</a>
+        <a href="/cycles/" class="btn btn-ghost">Review Cycles</a>
+    </div>
+</div>
+
+{% else %}
+<!-- ===== MANAGER DASHBOARD ===== -->
+
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value">{{ team_size }}</div>
+        <div class="stat-label">Team Members</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">{{ finalized_count }}</div>
+        <div class="stat-label">Reviews Done</div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value">{{ pending_count }}</div>
+        <div class="stat-label">Reviews Pending</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value">{{ sa_submitted }}</div>
+        <div class="stat-label">Self-Assessments In</div>
+    </div>
+    {% if avg_rating %}
+    <div class="stat-card purple">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">{{ avg_rating }}</div>
+        <div class="stat-label">Avg Rating / 5</div>
+    </div>
+    {% endif %}
+</div>
+
+{% if total_reviews_needed > 0 %}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Review Completion</span>
+        <span class="muted" style="font-size:0.8rem;">{{ finalized_count }} / {{ total_reviews_needed }}</span>
+    </div>
+    <div class="progress-wrap">
+        {% widthratio finalized_count total_reviews_needed 100 as pct %}
+        <div class="progress-bar" style="width:{{ pct }}%"></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="cards-row">
+    <div class="list-card">
+        <div class="list-card-header">
+            👥 Direct Reports
+            <a href="/reviews/" class="section-link" style="float:right;">View All →</a>
+        </div>
+        {% for member in direct_reports %}
+        <div class="list-item">
+            <div class="list-item-left">
+                <div class="list-item-name">{{ member.username }}</div>
+                <div class="list-item-sub">{{ member.get_role_display }}</div>
+            </div>
+            <a href="/reviews/?employee={{ member.pk }}" class="btn btn-ghost btn-sm">Reviews</a>
+        </div>
+        {% empty %}
+        <div class="empty-inline">No direct reports assigned.</div>
+        {% endfor %}
+    </div>
+
+    <div class="list-card">
+        <div class="list-card-header">📋 Recently Finalized</div>
+        {% for review in recent_reviews %}
+        <div class="list-item">
+            <div class="list-item-left">
+                <div class="list-item-name">{{ review.employee.username }}</div>
+                <div class="list-item-sub">{{ review.review_cycle.title }} · {{ review.finalized_at|date:"M j, Y" }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="stars" style="font-size:0.8rem;">
+                    {% for i in "12345" %}{% if forloop.counter <= review.rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                </div>
+                <div class="muted" style="font-size:0.72rem;">{{ review.rating }}/5</div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-inline">No reviews finalized yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Active Cycles</span>
+        <a href="/cycles/" class="section-link">Manage →</a>
+    </div>
+    <div class="list-card">
+        {% for cycle in active_cycles %}
+        <div class="list-item">
+            <div class="list-item-left">
+                <div class="list-item-name">{{ cycle.title }}</div>
+                <div class="list-item-sub">{{ cycle.start_date }} – {{ cycle.end_date }}</div>
+            </div>
+            <span class="badge badge-{{ cycle.status|lower }}">{{ cycle.get_status_display }}</span>
+        </div>
+        {% empty %}
+        <div class="empty-inline">No active cycles.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header"><span class="section-title">Quick Actions</span></div>
+    <div class="actions-row">
+        <a href="/reviews/" class="btn btn-primary">📋 Team Reviews</a>
+        <a href="/cycles/" class="btn btn-ghost">Manage Cycles</a>
+        <a href="/goals/" class="btn btn-ghost">View Goals</a>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Team Self-Assessments — {{ cycle.title }}{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Team <span>Assessments</span></h1>
+    <a href="{% url 'manager_review_list' %}" class="btn btn-ghost">← Review List</a>
+</div>
+<p class="muted" style="margin-bottom:1.5rem;font-size:0.9rem;">Cycle: <strong style="color:var(--text);">{{ cycle.title }}</strong></p>
+
+{% if assessments %}
+    {% for assessment in assessments %}
+    <div class="card" style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
+            <strong style="font-size:1rem;">{{ assessment.employee.username }}</strong>
+            <span class="badge badge-submitted">Submitted</span>
+        </div>
+        <p class="section-label">Assessment</p>
+        <p class="text-body">{{ assessment.text }}</p>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="icon">📝</div>
+        <p>No self-assessments submitted for this cycle yet.</p>
+    </div>
+{% endif %}
+{% endblock %}
